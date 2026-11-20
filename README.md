@@ -1,40 +1,29 @@
-======================================
- ____  ____   ____       _  _    ___  
-|  _ \|  _ \ / ___|     | || |  / _ \ 
-| |_) | |_) | |  _ _____| || |_| | | |
-|  _ <|  __/| |_| |_____|__   _| |_| |
-|_| \_\_|    \____|        |_|  \___/ 
-                                      
-======================================
+# We-re-Still-Deciding-
+# We-re-Still-Deciding-
 
-For this assignment, you will make a roleplaying game. 
+## Game Concept
+A GTA 6-inspired roleplaying game where the player enters a store competing against other customers to find and purchase the last copy of GTA 6.
 
-This is an "open ended assignment" meaning it will be graded by hand, and your
-grade will be based on how many design criteria you fulfill. You will work
-with a partner on this assignment, so my advice is to figure out early on who
-will be responsible for each design criteria, and to set deadlines ahead of
-the final deadline for when they'll be done. If your partner flakes, then
-you'll have to pick up the work.
+The player must explore the store, solve five puzzles, and defeat competing customers to win.
 
-Purpose: To teach you how to work on programming assignments with other people
-and to get experienced writing code on longer projects rather than little
-functions or toy assignments. Also to learn how the design process works a
-bit.
+## Team Members and Responsibilities
 
-Design Criteria:
-1) World Map that the user can move around
-2) Combat of some sort, and some way of winning the game
-3) Must have colors (Use #include "/public/colors.h")
-4) Must have 5 puzzles to win the game
-5) 40 lines of dialogue and/or descriptions of the world
+### Eddie
+- World map and player movement
+- Combat system
+- Enemy/customer encounters
+- Player health and winning conditions
 
-Extra Credit:
-1) Nonblocking I/O (also in colors.h)
-2) Compose Original Music and Cover Art (Make it yourself) Upload music to
-Youtube.
-3) Inventory System
+### JCronk
+- Five puzzles and riddles
+- Store environment and design
+- Colors and visual design
+- Dialogue and world descriptions
 
-Each one of these is a letter grade. If you do none, you get a 0%, if you do
-one you get an F (50%), two a D (60%), three a C (70%), four a B (80%), five
-an A (100%), and each extra credit point is an extra 10% added to your grade.
-So the max grade is 130%.
+## Planned Game Features
+- Interactive world map
+- Player movement
+- Combat mechanics
+- Five puzzles
+- Competing customers
+- Last-copy objective
