@@ -79,3 +79,60 @@ The following examples describe how the six pillars would be represented in a C+
 
 - **Implemented in the prototype:** The prototype separates behavior into JavaScript functions for movement, combat, puzzle interaction, dialogue, rendering, and restarting the game.
 - **Planned C++ implementation:** Separate C++ functions would organize player movement, combat, puzzles, dialogue, and game progression. For example, `movePlayer()`, `performAttack()`, `checkPuzzleAnswer()`, `showDialogue()`, and `checkGameState()` would divide the program into focused responsibilities. These functions could call one another so that movement leads to interaction checks, combat updates health, and game-state checks determine when to continue, restart, or end the run.
+
+## Classes and Structures
+
+The following C++ classes are a **planned object-oriented design** for a future C++ implementation. They are not yet implemented in the current HTML, CSS, and JavaScript prototype. The classes would organize the player's data and behavior, competing customers, puzzles, and overall game flow.
+
+### Player Class
+
+- **Member variables**
+  - `name`: Stores the player's chosen name.
+  - `health`: Tracks how much damage the player can take before losing the run.
+  - `attackDamage`: Determines the amount of damage available to deal during combat.
+  - `position`: Stores the player's location within the store.
+- **Member functions**
+  - `move()`: Updates the player's position based on movement input.
+  - `attack()`: Causes the player to attempt an attack against an enemy in range.
+  - `takeDamage()`: Reduces the player's health after an enemy attack or rival shove.
+  - `isAlive()`: Checks whether the player's health is greater than zero.
+- **Purpose:** This planned class would manage movement, health, and combat from the player's perspective. It would keep the player's information together while allowing the game to update and display the player's state.
+
+### Enemy Class
+
+- **Member variables**
+  - `name`: Identifies the competing customer.
+  - `health`: Tracks the enemy's remaining health.
+  - `attackDamage`: Determines how much damage the enemy deals during combat.
+  - `position`: Stores the enemy's location within the store.
+- **Member functions**
+  - `attack()`: Allows an enemy to attempt an attack against the player.
+  - `takeDamage()`: Reduces the enemy's health after an attack from the player.
+  - `isDefeated()`: Checks whether the enemy's health has reached zero.
+- **Purpose:** This planned class would represent the other customers competing for the last copy of GTA 6. Each enemy could move around the store, engage in combat, lose health when shoved or attacked, and leave the race once defeated.
+
+### Puzzle Class
+
+- **Member variables**
+  - `question`: Stores a puzzle or riddle presented at a puzzle station.
+  - `answer`: Stores the correct answer or expected response.
+  - `isSolved`: Tracks whether the player has answered the puzzle correctly.
+- **Member functions**
+  - `displayPuzzle()`: Shows the puzzle question and available choices to the player.
+  - `checkAnswer()`: Compares the player's selected answer with the stored correct answer.
+  - `markSolved()`: Changes `isSolved` to indicate that the puzzle has been completed.
+- **Purpose:** This planned class would manage each of the store's five puzzles. Individual objects could hold their own questions and answers, while the game checks whether every puzzle has been solved before allowing the player to reach checkout.
+
+### Game Class
+
+- **Member variables**
+  - `player`: Stores the `Player` object controlled by the user.
+  - `enemies`: Stores the competing customers, potentially in a collection such as `std::vector<Enemy>`.
+  - `puzzles`: Stores the five `Puzzle` objects, potentially in a collection such as `std::vector<Puzzle>`.
+  - `gameRunning`: Tracks whether the game is currently active.
+- **Member functions**
+  - `startGame()`: Initializes the player, enemies, puzzles, map state, and other required game data.
+  - `runGame()`: Controls the main game loop, processes input, and updates movement, combat, puzzles, and rendering.
+  - `displayMap()`: Displays or updates the store map and current objective locations.
+  - `checkWinCondition()`: Checks whether the player is alive and whether all required puzzles are solved and enemies defeated before determining a win or loss.
+- **Purpose:** This planned class would act as the central controller that connects the player, enemies, puzzles, and map. It would start the run, manage the game loop, update each system, and determine when the player wins or loses.
