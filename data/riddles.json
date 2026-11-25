@@ -1,0 +1,126 @@
+{
+  "riddles": [
+    {
+      "id": "silent_pioneer",
+      "title": "The Silent Pioneer",
+      "location": "Aisle 1",
+      "prompt": "Hey [player.name], I never spoke a single word, wore a black leather jacket, and started the 3D revolution in Liberty City in 2001. Who am I, and what is my game?",
+      "options": [
+        "Claude - GTA III",
+        "Tommy Vercetti - Vice City",
+        "Niko Bellic - GTA IV",
+        "Toni Cipriani - Liberty City Stories"
+      ],
+      "answer": "Claude - GTA III",
+      "penalty": {
+        "effects": [
+          {
+            "stat": "health",
+            "amount": -10
+          },
+          {
+            "stat": "position",
+            "amount": -1
+          }
+        ],
+        "message": "A shopper shoves [player.name] back into the bargain bin! -10 Health, Position -1."
+      }
+    },
+    {
+      "id": "80s_kingpin",
+      "title": "The 80s Kingpin",
+      "location": "Aisle 2",
+      "prompt": "A customer blocks the aisle holding a Hawaiian shirt and a chainsaw: 'Listen up, [player.name]—name the protagonist who ruled Ocean Beach in 1986, or drop your place in line.'",
+      "options": [
+        "Lance Vance",
+        "Tommy Vercetti",
+        "Victor Vance",
+        "Sonny Forelli"
+      ],
+      "answer": "Tommy Vercetti",
+      "penalty": {
+        "effects": [
+          {
+            "stat": "health",
+            "amount": -15
+          }
+        ],
+        "message": "You take a hit from a swinging display rack! -15 Health."
+      }
+    },
+    {
+      "id": "grove_street_check",
+      "title": "Grove Street Check",
+      "location": "Aisle 3",
+      "prompt": "A locked display case requires a 2-letter pass-code to open. The note reads: 'All we had to do was follow the damn train, ____!'",
+      "options": [
+        "CJ",
+        "OG",
+        "BS",
+        "RY"
+      ],
+      "answer": "CJ",
+      "penalty": {
+        "effects": [
+          {
+            "stat": "attack_damage",
+            "amount": -2
+          }
+        ],
+        "message": "You sprain your wrist prying at the locked glass case! -2 Attack Damage."
+      }
+    },
+    {
+      "id": "protagonist_lineup",
+      "title": "Protagonist Lineup",
+      "location": "Aisle 4",
+      "prompt": "Match these three bank robbers to their shared heist city and game: Michael De Santa, Franklin Clinton, and Trevor Philips.",
+      "options": [
+        "Liberty City - GTA IV",
+        "Vice City - GTA VI",
+        "Los Santos - GTA V",
+        "San Fierro - San Andreas"
+      ],
+      "answer": "Los Santos - GTA V",
+      "penalty": {
+        "effects": [
+          {
+            "stat": "position",
+            "amount": -2
+          }
+        ],
+        "message": "A crowd of rival shoppers cuts in front of [player.name]! Position -2."
+      }
+    },
+    {
+      "id": "final_copy",
+      "title": "The Final Copy",
+      "location": "Checkout Counter",
+      "prompt": "The cashier holds up the very last copy of GTA VI: 'Before I ring this up for you, [player.name], name the two protagonists running Leonida.'",
+      "options": [
+        "Lucia Caminos & Jason Duval",
+        "Niko Bellic & Roman Bellic",
+        "Catalina & Claude",
+        "Michael De Santa & Amanda De Santa"
+      ],
+      "answer": "Lucia Caminos & Jason Duval",
+      "penalty": {
+        "effects": [
+          {
+            "stat": "health",
+            "amount": -20
+          },
+          {
+            "stat": "attack_damage",
+            "amount": -3
+          },
+          {
+            "stat": "position",
+            "amount": -1
+          }
+        ],
+        "message": "Security steps in and shoves you back from the register! -20 Health, -3 Attack Damage, Position -1."
+      }
+    }
+  ]
+}
