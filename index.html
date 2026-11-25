@@ -84,7 +84,7 @@
     .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 12px; color: var(--muted); font-size: 11px; }
     .legend span { white-space: nowrap; }
     .legend b { padding-right: 4px; color: var(--lime); }
-    .status-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+    .status-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 14px; }
     .stat { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #141916; }
     .stat-label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
     .stat-value { margin-top: 6px; font-size: 16px; font-weight: 750; }
@@ -175,9 +175,11 @@
           <span><b>▰</b>Shelves</span><span><b>▣</b>Checkout</span>
         </div>
         <div class="status-row">
-          <div class="stat"><div class="stat-label">Health</div><div class="stat-value hearts" id="health"></div></div>
+          <div class="stat"><div class="stat-label">Health</div><div class="stat-value" id="health">Loading…</div></div>
           <div class="stat"><div class="stat-label">Clues found</div><div class="stat-value" id="clues">0 / 5</div></div>
           <div class="stat"><div class="stat-label">Rivals left</div><div class="stat-value" id="rivals-left">3</div></div>
+          <div class="stat"><div class="stat-label">Attack damage</div><div class="stat-value" id="attack-damage">—</div></div>
+          <div class="stat"><div class="stat-label">Position</div><div class="stat-value" id="position">—</div></div>
         </div>
       </section>
 
@@ -228,17 +230,19 @@
       const width = 10;
       const height = 8;
       const walls = new Set(["3,2", "4,2", "6,2", "3,4", "5,4", "6,4", "4,5"]);
-      const puzzles = [
-        { x: 2, y: 1, name: "The Midnight Register", question: "A cashier counts down from 12. They skip every number with a 3 in it. What number comes after 12?", answers: ["14", "15", "16"], correct: 0, hint: "Count forward, skipping 13." },
-        { x: 5, y: 1, name: "The Shelf Code", question: "Three boxes are labeled RED, BLUE, and RED + BLUE. Every label is wrong. You may peek inside one box. Which box do you open first?", answers: ["RED + BLUE", "RED", "BLUE"], correct: 0, hint: "The mixed box cannot be mixed if its label is wrong." },
-        { x: 8, y: 2, name: "The Shopping List", question: "A customer buys 2 controllers for $30 each and a game for $60. What is the total?", answers: ["$90", "$120", "$150"], correct: 1, hint: "Add the two controllers and the game." },
-        { x: 2, y: 4, name: "The Broken Clock", question: "A clock is 15 minutes fast. It says 9:00. What is the actual time?", answers: ["8:45", "9:15", "8:15"], correct: 0, hint: "If it's fast, the real time is earlier." },
-        { x: 7, y: 5, name: "The Final Riddle", question: "I have buttons but no shirt, a space but no room, and you can enter but not go outside. What am I?", answers: ["A keyboard", "A store", "A phone"], correct: 0, hint: "Look at the buttons you're using right now." }
-      ];
+      const puzzleLocations = ["Aisle 1", "Aisle 2", "Aisle 3", "Aisle 4", "Checkout Counter"];
+      const puzzleCoordinates = {
+        "Aisle 1": { x: 2, y: 1 },
+        "Aisle 2": { x: 5, y: 1 },
+        "Aisle 3": { x: 8, y: 2 },
+        "Aisle 4": { x: 2, y: 4 },
+        "Checkout Counter": { x: 8, y: 6 }
+      };
+      let puzzles = null;
       const initialRivals = [
-        { x: 4, y: 3, name: "Speedrunner", hp: 2 },
-        { x: 7, y: 3, name: "Collector", hp: 2 },
-        { x: 4, y: 6, name: "Night Owl", hp: 2 }
+        { x: 4, y: 3, name: "Speedrunner", hp: 20 },
+        { x: 7, y: 3, name: "Collector", hp: 20 },
+        { x: 4, y: 6, name: "Night Owl", hp: 20 }
       ];
       let player;
       let rivals;
@@ -246,7 +250,7 @@
       let selectedPuzzle = -1;
       let gameOver = false;
       let medkitUsed;
-      let logItems;
+      let logItems = [];
 
       const map = document.getElementById("map");
       const message = document.getElementById("message");
@@ -264,7 +268,46 @@
       }
       function setMessage(text) { message.textContent = text; }
 
+      async function loadPuzzles() {
+        const response = await fetch("data/riddles.json");
+        if (!response.ok) throw new Error("Request failed with status " + response.status);
+        const data = await response.json();
+        if (!data || !Array.isArray(data.riddles) || data.riddles.length !== 5) {
+          throw new Error("Expected exactly five riddles in data/riddles.json.");
+        }
+        const allowedStats = ["health", "attack_damage", "position"];
+        return data.riddles.map(function (riddle, index) {
+          const validEffects = riddle && riddle.penalty && Array.isArray(riddle.penalty.effects) &&
+            riddle.penalty.effects.every(function (effect) {
+              return effect && allowedStats.indexOf(effect.stat) >= 0 && Number.isFinite(effect.amount);
+            });
+          if (!riddle || !riddle.penalty || typeof riddle.title !== "string" ||
+            riddle.location !== puzzleLocations[index] || typeof riddle.prompt !== "string" ||
+            !Array.isArray(riddle.options) || riddle.options.length < 2 ||
+            typeof riddle.answer !== "string" || riddle.options.indexOf(riddle.answer) < 0 ||
+            typeof riddle.penalty.message !== "string" || !validEffects) {
+            throw new Error("Invalid riddle data at item " + (index + 1) + ".");
+          }
+          const coordinates = puzzleCoordinates[riddle.location];
+          return {
+            x: coordinates.x,
+            y: coordinates.y,
+            name: riddle.title,
+            location: riddle.location,
+            question: riddle.prompt,
+            answers: riddle.options,
+            correct: riddle.options.indexOf(riddle.answer),
+            penalty: riddle.penalty
+          };
+        });
+      }
+
+      function nextPuzzleIndex() {
+        return solved.findIndex(function (isSolved) { return !isSolved; });
+      }
+
       function updateObjective() {
+        if (!puzzles) return;
         const cluesLeft = solved.filter(function (isSolved) { return !isSolved; }).length;
         if (cluesLeft === 0 && rivals.length === 0) {
           objective.textContent = "All clear! Head to checkout on the southeast side and claim the last GTA VI copy.";
@@ -312,6 +355,7 @@
       }
 
       function draw() {
+        if (!puzzles) return;
         map.replaceChildren();
         for (let y = 0; y < height; y++) {
           for (let x = 0; x < width; x++) {
@@ -346,7 +390,7 @@
             } else if (x === 1 && y === 1) {
               className += " medkit";
               mark = medkitUsed ? "·" : "+";
-              label = medkitUsed ? "Empty first-aid kit" : "First-aid kit, restores 2 health";
+              label = medkitUsed ? "Empty first-aid kit" : "First-aid kit, restores 20 health";
             } else if (x === 0 || y === 0 || x === width - 1 || y === height - 1) {
               className += " wall";
               label = "Store wall";
@@ -373,26 +417,20 @@
             map.appendChild(tile);
           }
         }
-        const health = document.getElementById("health");
-        health.replaceChildren();
-        const hearts = document.createElement("span");
-        hearts.textContent = "♥".repeat(player.hp) + "♡".repeat(player.maxHp - player.hp);
-        const count = document.createElement("span");
-        count.className = "heart-count";
-        count.textContent = player.hp + " / " + player.maxHp;
-        health.append(hearts, count);
-        health.setAttribute("aria-label", "Health " + player.hp + " of " + player.maxHp);
+        document.getElementById("health").textContent = player.health + " / " + player.maxHealth;
         document.getElementById("clues").textContent = solved.filter(Boolean).length + " / 5";
         document.getElementById("rivals-left").textContent = String(rivals.length);
+        document.getElementById("attack-damage").textContent = String(player.attack_damage);
+        document.getElementById("position").textContent = String(player.position);
         updateObjective();
       }
 
       function showPuzzle(index) {
         selectedPuzzle = index;
         const puzzle = puzzles[index];
-        puzzleTitle.textContent = puzzle.name;
-        question.textContent = puzzle.question;
-        puzzleHint.textContent = "Choose an answer. " + puzzle.hint;
+        puzzleTitle.textContent = puzzle.name + " · " + puzzle.location;
+        question.textContent = puzzle.question.replace(/\[player\.name\]/g, player.name);
+        puzzleHint.textContent = "Choose an answer to continue toward checkout.";
         choices.replaceChildren();
         puzzle.answers.forEach(function (answer, answerIndex) {
           const button = document.createElement("button");
@@ -423,22 +461,40 @@
       }
 
       function answerPuzzle(answerIndex) {
-        if (gameOver || selectedPuzzle < 0 || solved[selectedPuzzle]) return;
+        if (!puzzles || gameOver || selectedPuzzle < 0 || solved[selectedPuzzle]) return;
         const puzzle = puzzles[selectedPuzzle];
         if (answerIndex === puzzle.correct) {
           solved[selectedPuzzle] = true;
+          player.position += 1;
           addLog("Solved: " + puzzle.name + ".");
           setMessage("Nice work. One more clue toward that last copy.");
           resetPuzzleCard();
           draw();
+          if (puzzle.location === "Checkout Counter") {
+            if (rivals.length === 0) {
+              endGame(true);
+            } else {
+              setMessage("Final riddle solved. Clear the remaining rivals before claiming the copy.");
+            }
+          }
         } else {
-          setMessage("Not quite. The station buzzes and a rival makes their move.");
-          addLog("Wrong answer at " + puzzle.name + ".");
+          const penaltyMessage = puzzle.penalty.message.replace(/\[player\.name\]/g, player.name);
+          puzzle.penalty.effects.forEach(function (effect) {
+            player[effect.stat] += effect.amount;
+          });
+          setMessage(penaltyMessage);
+          addLog("Wrong answer at " + puzzle.name + ". " + penaltyMessage);
+          draw();
+          if (player.health <= 0) {
+            endGame(false);
+            return;
+          }
           takeTurn();
         }
       }
 
       function move(dx, dy) {
+        if (!puzzles) return;
         if (gameOver) return;
         if (Math.abs(dx) + Math.abs(dy) !== 1) {
           setMessage("Move one tile at a time.");
@@ -459,14 +515,17 @@
         player.y = y;
         if (x === 1 && y === 1 && !medkitUsed) {
           medkitUsed = true;
-          player.hp = Math.min(player.maxHp, player.hp + 2);
-          addLog("Found a first-aid kit. +2 health.");
+          player.health = Math.min(player.maxHealth, player.health + 20);
+          addLog("Found a first-aid kit. +20 health.");
           setMessage("A first-aid kit! You feel ready for the rush.");
         } else {
           const station = puzzles.findIndex(function (puzzle) { return puzzle.x === x && puzzle.y === y; });
-          if (station >= 0 && !solved[station]) {
+          const next = nextPuzzleIndex();
+          if (station >= 0 && !solved[station] && station === next) {
             showPuzzle(station);
-            setMessage("You found a puzzle station. Pick an answer to earn its clue.");
+            setMessage("You found " + puzzles[station].location + ". Solve this riddle to continue.");
+          } else if (station >= 0 && !solved[station] && station > next) {
+            setMessage("First solve " + puzzles[next].name + " at " + puzzles[next].location + ".");
           } else if (x === 8 && y === 6) {
             const remaining = solved.filter(Boolean).length;
             if (remaining < puzzles.length) {
@@ -489,8 +548,8 @@
         rivals.forEach(function (rival) {
           const distance = Math.abs(rival.x - player.x) + Math.abs(rival.y - player.y);
           if (distance === 1) {
-            player.hp = Math.max(0, player.hp - 1);
-            addLog(rival.name + " shoved you. -1 health.");
+            player.health = Math.max(0, player.health - 10);
+            addLog(rival.name + " shoved you. -10 health.");
             return;
           }
           const nextStep = nextRivalStep(rival);
@@ -500,24 +559,32 @@
           }
         });
         draw();
-        if (player.hp <= 0) {
+        if (player.health <= 0) {
           endGame(false);
           return;
+        }
+        if (player.x === 8 && player.y === 6 && solved.every(Boolean) && rivals.length === 0) {
+          endGame(true);
         }
       }
 
       function interact() {
+        if (!puzzles) return;
         if (gameOver) return;
         const station = puzzles.findIndex(function (puzzle) { return puzzle.x === player.x && puzzle.y === player.y; });
-        if (station >= 0 && !solved[station]) {
+        const next = nextPuzzleIndex();
+        if (station >= 0 && station === next) {
           showPuzzle(station);
-          setMessage("Choose an answer to solve this station.");
+          setMessage("Solve " + puzzles[station].name + " to continue toward checkout.");
           return;
         }
-        setMessage("Step onto an unsolved ◆ station to inspect its puzzle.");
+        setMessage(next >= 0
+          ? "Progress through the riddles in order, starting at " + puzzles[next].location + "."
+          : "All five riddles are solved. Head to checkout for the last copy.");
       }
 
       function attack() {
+        if (!puzzles) return;
         if (gameOver) return;
         const target = rivals.find(function (rival) {
           return Math.abs(rival.x - player.x) + Math.abs(rival.y - player.y) === 1;
@@ -526,20 +593,21 @@
           setMessage("Get next to a rival before shoving them away.");
           return;
         }
-        target.hp -= 1;
+        target.hp -= player.attack_damage;
         if (target.hp <= 0) {
           rivals = rivals.filter(function (rival) { return rival !== target; });
           addLog(target.name + " gave up the race.");
           setMessage(target.name + " is out of the race!");
         } else {
-          addLog("Shoved " + target.name + ". One more hit!");
-          setMessage(target.name + " staggers back. Shove them one more time.");
+          addLog("Shoved " + target.name + " for " + player.attack_damage + " damage.");
+          setMessage(target.name + " staggers back with " + target.hp + " health remaining.");
         }
         takeTurn();
       }
 
       function restart() {
-        player = { x: 1, y: 6, hp: 8, maxHp: 8 };
+        if (!puzzles) return;
+        player = { name: "Shopper", x: 1, y: 6, health: 100, maxHealth: 100, attack_damage: 10, position: 0 };
         rivals = initialRivals.map(function (rival) { return Object.assign({}, rival); });
         solved = puzzles.map(function () { return false; });
         medkitUsed = false;
@@ -582,7 +650,14 @@
         }
       });
 
-      restart();
+      setMessage("Loading riddles…");
+      loadPuzzles().then(function (loadedPuzzles) {
+        puzzles = loadedPuzzles;
+        restart();
+      }).catch(function (error) {
+        setMessage("Could not load the riddles: " + error.message + " Run the game from a local web server.");
+        addLog("Riddle loading failed: " + error.message);
+      });
     }());
   </script>
 </body>
